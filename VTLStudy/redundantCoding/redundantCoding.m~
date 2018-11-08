@@ -15,7 +15,7 @@
 %
 %  OUTPUT: 
 %
-%  Additional Scripts Used:
+%  Additional Scripts Used: demographicsQuestions.m
 %
 %  Additional Comments: 
 %  The file will change the directory to its source folder to keep saving consistent and avoid file errors. 
@@ -35,19 +35,27 @@
 %  2) collect subject number, high level experiment log information (demographics, time)
 %
 %  TRIAL LEVEL
-%  2) Prepare and show display
-%  3) Mask
-%  4) Show response display
-%  5) Collect response
-%  6) Feedback [todo: design decision about how we want to incentivize performance]
+%  3) Prepare and show display
+%  4) Mask
+%  5) Show response display
+%  6) Collect response
+%  7) Feedback [todo: design decision about how we want to incentivize performance]
 %
 
+clear all;
+close all;
+clearvars;
 
 %% 1) Initialize, assign condition/block info
+
+% the Psychtoolbox path may be different on different computers. Careful.  
+addpath(genpath('/Applications/Psychtoolbox')) 
+
 currFolder = fileparts(which(mfilename)); % find current folder 
 addpath(genpath(currFolder));             % add subdirectories
 cd(currFolder)                            % move to current folder
 
+% levels of the Proportion factor 
 proportionMat = [[30, 70];                % proportion of filled-in icons
                  [70, 30];
                  [52, 48];
@@ -58,7 +66,8 @@ proportionMat = [[30, 70];                % proportion of filled-in icons
 nProportionLevels = size(proportionMat);  % how many proportion levels are there?
              
 proportionIdx = 1:nProportionLevels(1);   % prep an indexing vector
-             
+
+% levels of the Redundancy factor
 redundancyVect = [1;0];                   % are group differences redundantly encoded? 
 
 
@@ -71,4 +80,87 @@ redundancyVect = [1;0];                   % are group differences redundantly en
 presentationOrder = randperm(length(conditionCrossing));
 
 
-%% 2) 
+%% 2) Participant-level information; prep PsychToolBox presentation info
+experimentOpenTime = tic;
+  
+% collect demographics 
+[demographics, cancelledInput] = demographicsQuestions;
+
+% prepare this participants' unique directory to store every variable as a
+% .mat backup. The subject number is the unique time from the OS via GetSecs
+                        timeIDDir = num2str(GetSecs);
+timeIDDir(strfind(timeIDDir, '.'))='_';
+mkdir(timeIDDir)                  % create folder
+addpath(timeIDDir)                % add that new folder to the path
+
+%% PsychToolbox
+Screen('Preference', 'SkipSyncTests', 1); 
+
+% Get the screen numbers
+screens = Screen('Screens');
+
+% Draw to the external screen if avaliable
+screenNumber = max(screens);
+
+% coerce input option to the external keyboad if there are multiple
+% options (if you're on the macbook)
+[keyboardIndices, productNames, allInfos] = GetKeyboardIndices;
+kbPointer = keyboardIndices(end);
+
+global psych_default_colormode;
+psych_default_colormode = 1;
+
+% open first window
+[windowPtr, windowPtrRect] = Screen('OpenWindow', screenNumber, bkgnCol(1)*255); % open a screen
+
+% Unify keycode to keyname mapping across operating systems:
+KbName('UnifyKeyNames');
+Screen('TextFont', windowPtr, 'Arial')
+
+Screen('TextSize', windowPtr, textSize);
+
+     textSize = 14;
+    screenDim = get(screenNumber,'screensize');             % note: 0,0 is the top left corner of the screen
+screenXpixels = screenDim(3); screenYpixels = screenDim(4); % max screen size (should be resolution of your computer)
+       bgArea = screenDim;                                  % This sets the coordinate space of the screen window, WHICH MAY HAVE A DIFFERENT SIZE
+
+       
+% in the non-redundant condition; luminance is the only difference between
+% categories. [todo: think about luminiance norming?]
+    foreGrndD = (bkgnCol./4)*255; % 4x as bright as background [todo: this is backward? confirm color representation on active OS]
+    foreGrndL = (bkgnCol*2)*255; % twice as dark as background
+
+
+try % the whole experiment is in a try/catch
+
+    %% 3) Prepare and show display
+    
+    % locations are top left = 1, top center = 2, top right = 3 ... 
+    presentationLocation = rand([1,6],1); % display is in one of six locations
+    
+    if presentationLocation <= 3          % eliminate common vertical baseline
+        responseLocation = rand([4,6],1);
+    else
+        responseLocation = rand([1,3],1);
+    end
+    
+    positionOptions = positionRef([screenXpixels, screenYpixels]); % index into the posiiton options
+    
+    
+    % [todo] index into position Options to get the display location
+    
+    % [todo] create a function to draw n=setSize shapes in the specified
+    % area
+    
+    % [todo] show display
+    
+    %% 4) mask
+    %[todo] 
+catch %#ok<*CTCH> In event of error
+    % This "catch" section executes in case of an error in the "try"
+    % section above.  
+    sca;
+    ShowCursor()
+    fclose('all');
+    psychrethrow(psychlasterror);
+end
