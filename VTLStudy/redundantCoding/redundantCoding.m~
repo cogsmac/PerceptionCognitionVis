@@ -15,7 +15,7 @@
 %
 %  OUTPUT: 
 %
-%  Additional Scripts Used: demographicsQuestions.m
+%  Additional Scripts Used:
 %
 %  Additional Comments: 
 %  The file will change the directory to its source folder to keep saving consistent and avoid file errors. 
@@ -42,9 +42,6 @@
 %  6) Feedback [todo: design decision about how we want to incentivize performance]
 %
 
-clear all;
-close all;
-clearvars;
 
 %% 1) Initialize, assign condition/block info
 currFolder = fileparts(which(mfilename)); % find current folder 
@@ -74,10 +71,4 @@ redundancyVect = [1;0];                   % are group differences redundantly en
 presentationOrder = randperm(length(conditionCrossing));
 
 
-%% 2) Participant-level information; prep PsychToolBox presentation info
-experimentOpenTime = tic;
-sca;  
-Screen('Preference', 'SkipSyncTests', 1);
- 
-% collect demographics 
-[demographics, cancelledInput] = demographicsQuestions;
+%% 2) 
