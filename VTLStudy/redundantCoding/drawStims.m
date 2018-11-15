@@ -1,4 +1,4 @@
-function drawStims(setSize, proportion, redundancy, centroid)
+function drawStims(setSize, proportion, redundancy, centroid, iconWidth)
 %
 %  Author: Caitlyn McColeman 
 %  Date Created: February 26 2018
@@ -15,7 +15,7 @@ function drawStims(setSize, proportion, redundancy, centroid)
 %        proportion, int; how many make up the larger set.
 %    redundancy, logical; are the groups redundantly encoded? 
 %         centroid, vect; the x, y coordinates for the center of the array.
-%  
+%         iconWidth, int; the x dimension for the circle/other shapes
 %  OUTPUT: 
 %
 %  EXAMPLE:
@@ -24,7 +24,18 @@ function drawStims(setSize, proportion, redundancy, centroid)
 %  Additional Scripts Used: 
 %  
 %  Additional Comments: 
+%
+spacingRule = .5; % icons will be separated by half their width
 
+% 1. Use the number of icons to determine the dimensionality of the array.
+% This is done by finding even divisors and choosing the squarest one ..
+              K = 1:setSize;
+factorsPossible = K(rem(setSize,K)==0);
+  reshapeFactor = median(factorsPossible);
+% .. and then initializing a matrix of the same dimensions that will later
+% be filled in with X, Y coordinates
+    xStimCoords = reshape(K, reshapeFactor, []);
+    yStimCoords = xStimCoords;
 
+% 2. spread the array around the centroid
 
-% 1. Determine how many icons there .
