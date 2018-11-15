@@ -41,7 +41,13 @@
 %  6) Collect response
 %  7) Feedback [todo: design decision about how we want to incentivize performance]
 %
-
+%
+%  Conditions: greyscale icons (white vs black on top of grey background),
+%               shape icons (circle vs triangle, all black/white on grey background)              
+%               color & shape redundant coding (grey bg)
+%  -  
+%  - 
+%
 clear all;
 close all;
 clearvars;
