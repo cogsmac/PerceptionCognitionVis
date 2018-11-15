@@ -37,5 +37,10 @@ factorsPossible = K(rem(setSize,K)==0);
     xStimCoords = reshape(K, reshapeFactor, []);
     yStimCoords = xStimCoords;
 
-% 2. spread the array around the centroid
+% 2. using centroid, build out array
 
+
+% 3. draw circles, icons (shape) 
+
+
+% 4. Jardine IT 
