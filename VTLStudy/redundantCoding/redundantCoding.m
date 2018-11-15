@@ -138,7 +138,7 @@ try % the whole experiment is in a try/catch
     
     %% 3) Prepare and show display
     
-    % locations are top left = 1, top center = 2, top right = 3 ... 
+    % locations are top left = 1, top center = 2, top right = 3 ... [todo coerce order in positionRef]
     presentationLocation = rand([1,6],1); % display is in one of six locations
     
     if presentationLocation <= 3          % eliminate common vertical baseline
@@ -149,8 +149,8 @@ try % the whole experiment is in a try/catch
     
     positionOptions = positionRef([screenXpixels, screenYpixels]); % index into the posiiton options
     
-    
-    % [todo] index into position Options to get the display location
+    % get pixel information for the centre of the stimulus array. 
+         centroidPx = positionOptions(presentationLocation,:);
     
     % [todo] create a function to draw n=setSize shapes in the specified
     % area
