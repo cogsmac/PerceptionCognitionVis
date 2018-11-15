@@ -1,6 +1,6 @@
 function drawStims(setSize, proportion, redundancy, centroid, iconWidth)
 %
-%  Author: Caitlyn McColeman 
+%  Author: Jardine & McColeman
 %  Date Created: February 26 2018
 %  Last Edit:    November 8 2018
 %  
