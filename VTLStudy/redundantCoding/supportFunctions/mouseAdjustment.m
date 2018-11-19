@@ -12,7 +12,8 @@ function [hasBeenAdjusted, updatedRect] = mouseAdjustment(stimType, inAdjustment
 %  Reviewed: []
 %  Verified: []
 %
-%  INPUT: inAdjustmentRegion, binary; is this an appropriate place to
+%  INPUT:           stimType, string; 'horizontal' or 'vertical' response bar? 
+%         inAdjustmentRegion, binary; is this an appropriate place to
 %                                     update values?
 %         weHaveSomethingToDraw, bin; is there already an adjusted value
 %                                     from the last iteration?
@@ -34,7 +35,7 @@ function [hasBeenAdjusted, updatedRect] = mouseAdjustment(stimType, inAdjustment
 hasBeenAdjusted = weHaveSomethingToDraw; 
 updatedRect = adjustableRect;
 
-
+%[todo: replace stackedAcross, with across/vertical]
 if inAdjustmentRegion && buttonDown && ~strcmpi(stimType, 'stackedAcross')
     hasBeenAdjusted = 1;
     % update the adjusted rectangle
