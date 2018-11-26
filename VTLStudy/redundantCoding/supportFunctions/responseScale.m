@@ -14,19 +14,8 @@ function [hasBeenAdjusted, updatedRect]= responseScale(scaleType, inAdjustmentRe
 %  Reviewed: []
 %  Verified: []
 %
-%  INPUT: inAdjustmentRegion, binary; is this an appropriate place to
-%                                     update values?
-%         weHaveSomethingToDraw, bin; is there already an adjusted value
-%                                     from the last iteration?
-%                    buttonDown, bin; is the mouse button being pressed?
-%                adjustableRect,vect; the x1, y1, x2, y2 values of the new
-%                                     rectangle to draw
-%                             y, int; the updated y value for the rectangle
-%                     windowPtr, int; the index to the stimulus
-%                                     presentation window to draw the
-%                                     rectangle to
-%
-%  OUTPUT: drawRect, vector; coordinates for the new rectangle
+%  INPUT: 
+%  OUTPUT: 
 %
 %  Additional Scripts Used:
 %
@@ -46,7 +35,7 @@ if strcmpi(scaleType, 'rectangleAcross')
         ShowCursor('CrossHair')
         
         % new "best guess" from participant
-        updatedRect = [adjustableRect(1), snapVec(1), ...
+        updatedRect = [previousRect(1), snapVec(1), ...
                                        x, snapVec(2)];
         
         %{
@@ -63,10 +52,10 @@ if strcmpi(scaleType, 'rectangleAcross')
     elseif inAdjustmentRegion
         ShowCursor('CrossHair')
         
-        updatedRect = adjustableRect; % no change
+        updatedRect = previousRect; % no change
     else
-        
-        updatedRect = adjustableRect; % no change
+        ShowCursor('Arrow')
+        updatedRect = previousRect; % no change
     end
 end
 
