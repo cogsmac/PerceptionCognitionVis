@@ -88,9 +88,86 @@ presentationOrder = randperm(length(conditionCrossing));
 
 %% 2) Participant-level information; prep PsychToolBox presentation info
 experimentOpenTime = tic;
-  
+
+% Clear the workspace and the screen
+sca;
+close all;
+
+debugMode = 0; % toggle to 1 for development
+
+if debugMode
+    subID = 1; %#ok<UNRCH> % the debug subject ID will overwrite input to avoid errors
+end
+
+% Basic experiment parameters
+nMinutes = 50; % maximum duration
+trialPerBlock = 50;
+
+%% PsychToolbox
+% Here we call some default settings for setting up Psychtoolbox
+PsychDefaultSetup(2);
+
+% keyboard, mouse information
+[keyboardIndices, productNames, allInfos] = GetKeyboardIndices;  %#ok<*ASGLU>
+[mouseIndices, productNames, allInfo] = GetMouseIndices;
+
+kbPointer = keyboardIndices(end);  %#ok<*NASGU>
+mousePntr = mouseIndices(end);
+
+KbName('UnifyKeyNames');
+
+% Get the screen numbers
+screens = Screen('Screens');
+Screen('Preference', 'SkipSyncTests', 1)
+
+% Draw to the external screen if avaliable
+screenNumber = min(screens);
+
+% Define black and white
+white = WhiteIndex(screenNumber);
+black = BlackIndex(screenNumber);
+lightGrey = [.75 .75 .75];
+
+experimentOpenTime = tic; testIfTimeUp = 0;
+
+% Open an on screen window
+[windowPtr, windowRect] = PsychImaging('OpenWindow', screenNumber, lightGrey, [1 1 1200 750]);
+Screen('Resolution', windowPtr);
+% Get the size of the on screen window
+[screenXpixels, screenYpixels] = Screen('WindowSize', windowPtr);
+
+% get some details about the presentation size
+positionOptions = positionRef([screenXpixels, screenYpixels]);
+
+% Measure the vertical refresh rate of the monitor
+ifi = Screen('GetFlipInterval', windowPtr);
+
+% Retreive the maximum priority number and set max priority
+topPriorityLevel = MaxPriority(windowPtr);
+Priority(topPriorityLevel);
+
+% Using Scarfe's waitframe method to improve timing accuracy
+flipSecs = .75;
+waitframes = round(flipSecs / ifi);
+
+% preparing logging variables
+sameOrDiffTrial = 'adjust';
+
+% allow only task-relevant responses [TODO] probably just want "enter" when
+% they're done
+ret = RestrictKeysForKbCheck([32 44 40 37 77 88]); % spacebar, return and enter for OSx and PC. only tested on mac
+
+
+%% directory prep
+% make sure we're in the right place in the directory so that stuff saves
+% to the proper location
+whereAmI  = mfilename('fullpath') ;
+toLastDir = regexp(whereAmI, '.*\/', 'match') ;% get directory only (exclude file name)
+toLastDir = toLastDir{1}; % extract string from cell
+cd(toLastDir) % move to directory containing the file. Think of it as home base.
+
 % collect demographics 
-[demographics, cancelledInput] = demographicsQuestions;
+%[demographics, cancelledInput] = demographicsQuestions;
 
 % prepare this participants' unique directory to store every variable as a
 % .mat backup. The subject number is the unique time from the OS via GetSecs
@@ -99,42 +176,6 @@ timeIDDir(strfind(timeIDDir, '.'))='_';
 mkdir(timeIDDir)                  % create folder
 addpath(timeIDDir)                % add that new folder to the path
 
-%% PsychToolbox
-Screen('Preference', 'SkipSyncTests', 1); 
-
-% Get the screen numbers
-screens = Screen('Screens');
-
-% Draw to the external screen if avaliable
-screenNumber = max(screens);
-
-% coerce input option to the external keyboad if there are multiple
-% options (if you're on the macbook)
-[keyboardIndices, productNames, allInfos] = GetKeyboardIndices;
-kbPointer = keyboardIndices(end);
-
-global psych_default_colormode;
-psych_default_colormode = 1;
-
-% open first window
-[windowPtr, windowPtrRect] = Screen('OpenWindow', screenNumber, bkgnCol(1)*255); % open a screen
-
-% Unify keycode to keyname mapping across operating systems:
-KbName('UnifyKeyNames');
-Screen('TextFont', windowPtr, 'Arial')
-
-Screen('TextSize', windowPtr, textSize);
-
-     textSize = 14;
-    screenDim = get(screenNumber,'screensize');             % note: 0,0 is the top left corner of the screen
-screenXpixels = screenDim(3); screenYpixels = screenDim(4); % max screen size (should be resolution of your computer)
-       bgArea = screenDim;                                  % This sets the coordinate space of the screen window, WHICH MAY HAVE A DIFFERENT SIZE
-
-       
-% in the non-redundant condition; luminance is the only difference between
-% categories. [todo: think about luminiance norming?]
-    foreGrndD = (bkgnCol./4)*255; % 4x as bright as background [todo: this is backward? confirm color representation on active OS]
-    foreGrndL = (bkgnCol*2)*255; % twice as dark as background
 
 
 try % the whole experiment is in a try/catch
@@ -145,12 +186,12 @@ try % the whole experiment is in a try/catch
     %% 3) Prepare and show display
     
     % locations are top left = 1, top center = 2, top right = 3 ... [todo coerce order in positionRef]
-    presentationLocation = rand([1,6],1); % display is in one of six locations
+    presentationLocation = randi([1,6],1); % display is in one of six locations
     
     if presentationLocation <= 3          % eliminate common vertical baseline
-        responseLocation = rand([4,6],1);
+        responseLocation = randi([4,6],1);
     else
-        responseLocation = rand([1,3],1);
+        responseLocation = randi([1,3],1);
     end
     
     positionOptions = positionRef([screenXpixels, screenYpixels]); % index into the posiiton options
@@ -173,8 +214,13 @@ try % the whole experiment is in a try/catch
     % on a bar 
     
     %% 6) collect response
-    
+    responseOnset = Screen('Flip', windowPtr)
     % [todo] log response value, response location, response time 
+    [responseTime, responsePixels, responseRatio] = responsePhase(kbPointer, windowPtr, screenXpixels, screenYpixels);
+    
+    % clear screen, collect timing 
+    Screen('FillRect', windowPtr, [.5 .5 .5]);
+    responseOffset = Screen('Flip', windowPtr);
     
     %% 7) feedback? 
 catch %#ok<*CTCH> In event of error
