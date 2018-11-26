@@ -22,7 +22,7 @@ function [responseTime, responsePixels, responseRatio] = responsePhase(kbPtr, wi
 %  Additional Comments:
 
 % some hard-coded constants we can adjust on additional iterations
-     scaleType = 'rectangleAcross'; % starting with this for now; we can change to be a variable if we want to play with other response options.
+     scaleType = 'rectangleSlider'; %'rectangleAcross'; % starting with this for now; we can change to be a variable if we want to play with other response options.
 responseBarCol = [0,0,0];           % what color is the participant using to draw?
 
 
@@ -34,7 +34,7 @@ commandwindow;          % coerce cursor to command window for easy exit and to k
 
 % set-up properties of the response scale outline 
 switch lower(scaleType)
-    case 'rectangleacross' %[todo make a choice whether to use color here too if it's meaningful during stimulus phase]
+    case {'rectangleacross', 'rectangleslider'} %[todo make a choice whether to use color here too if it's meaningful during stimulus phase]
         minX = .25 * screenXMax;
         maxX = .75 * screenXMax;
         
