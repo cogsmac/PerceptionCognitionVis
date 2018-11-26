@@ -24,7 +24,7 @@ function [hasBeenAdjusted, updatedRect]= responseScale(scaleType, inAdjustmentRe
 % if nothing else changes, the status remains as is
 hasBeenAdjusted = weHaveSomethingToDraw; % will update if there's a viable click
 
-if strcmpi(scaleType, 'rectangleAcross')
+if contains(scaleType,'rectangle') % rectangle across; slider response
     if weHaveSomethingToDraw % display the last response to aid user
         
         % draw the last adjustment 
@@ -34,9 +34,17 @@ if strcmpi(scaleType, 'rectangleAcross')
     if inAdjustmentRegion && buttonDown % participant is in response range
         ShowCursor('CrossHair')
         
+        if strcmpi(scaleType, 'rectangleAcross')
         % new "best guess" from participant
         updatedRect = [previousRect(1), snapVec(1), ...
                                        x, snapVec(2)];
+                                   
+        else strcmpi(scaleType, 'rectangleSlider')
+            % new "best guess" from participant
+            updatedRect = [x-2, snapVec(1), ...
+                x+2, snapVec(2)];
+            
+        end
         
         %{
         updatedRect = [xSnap-.5*pointWidth y-.5*pointHeight...
