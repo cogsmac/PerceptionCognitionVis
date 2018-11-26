@@ -289,7 +289,7 @@ try % the whole experiment is in a try/catch
             %% 6) collect response
             responseOnset = Screen('Flip', windowPtr);
             % [todo] log response value, response location, response time
-%             [responseTime, responsePixels, responseRatio] = responsePhase(kbPointer, windowPtr, screenXpixels, screenYpixels);
+             [responseTime, responsePixels, responseRatio] = responsePhase(kbPointer, windowPtr, screenXpixels, screenYpixels);
 %             
 %             % clear screen, collect timing
 %             Screen('FillRect', windowPtr, backgroundColor);
