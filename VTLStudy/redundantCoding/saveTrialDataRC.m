@@ -2,7 +2,7 @@
 % This creates an organized .csv file for each participant with an eye
 % toward human readability for easier analysis on the other side. 
 
-saveTrialDataRC(...
+function saveTrialDataRC(...
                 ... %======================== basic analysis variables [BA] 
                 subID, ...                     participantID
                 trial, ...                     trialID    
@@ -33,7 +33,8 @@ saveTrialDataRC(...
                 testIfTimeUp, ...              time elapsed in minutes
                 ITI_secs, ...                  intertrial interval seconds
                 arrayDur, ...                  stimulus presentation duration
-                maskDur)                     % mask duration
+                maskDur, ...                %  mask duration
+                whoAmIFile)
             
             
 %  Author: Caitlyn McColeman
@@ -66,26 +67,26 @@ saveTrialDataRC(...
 
 % basic analyses
 varNames_BA = {'participantID', 'trial', 'trialAccuracy',   'testedProportion', 'firstEncoding', 'redundantlyCoded', 'responseTime', 'setSize', 'correctRatio', 'participantResponseRatio', 'participantResponsePixel' };
-varTypes_BA = ['     %s\t        %d\t        %2.6f\t               %s\t               %s\t            %d\t                %6.6f\t       %d\t         %2.2f\t               %2.6f\t                     6.2f\t  '];
+varTypes_BA = ['     %s\t        %d\t        %2.6f\t               %s\t               %s\t            %d\t                %6.6f\t       %d\t         %2.2f\t               %2.6f\t                   %6.2f\t  '];
   dataIn_BA = {     subID,      trial,    trialAccuracy,  mat2str(proportionTest), baseEncoding,    redundancyCond,   responseTime,   setSize,   percentProp1,           responseRatio,          responsePixels };
 
 
 % stimulus properties
-varNames_SP = {'group1Color', 'group2Color', 'group1Shape', 'group2Shape', 'shapeOrder', 'iconWidthPx', 'iconWidthDVA', 'arrayLocation'};
-varTypes_SP = ['    %s\t          %s\t           %s\t           %s\t          %s\t          %4.4f\t         %4.4f\t             %d\t'];
-  dataIn_SP = {prop1Col,        prop2Col,     prop1Shape,   prop2Shape,     shapeOrder,    iconWidth,   iconWidth_dva, presentationLocation};
+varNames_SP = {'group1Color',       'group2Color',      'group1Shape', 'group2Shape', 'shapeOrder', 'iconWidthPx', 'iconWidthDVA', 'arrayLocation'};
+varTypes_SP = ['    %s\t                %s\t                %s\t           %s\t          %s\t          %4.4f\t         %4.4f\t             %d\t'];
+  dataIn_SP = {mat2str(prop1Col), mat2str(prop2Col),     prop1Shape,   prop2Shape,     shapeOrder,    iconWidth,   iconWidth_dva, presentationLocation};
   
 % stimulus timing details
 varNames_TD = {'stimulusOnset', 'maskOnset', 'maskOffset', 'responseOnset', 'responseOffset', 'minutesElapsed', 'interTrialInterval', 'arrayDuration', 'maskDuration'};
-varTypes_TD = ['  %6.4f\t         %6.4f\t       %6.4f\t        %6.4f\t           %6.4f\t           %3.4f\t                %1.4\t          %1.4\t          %1.4\t'];
+varTypes_TD = ['  %6.4f\t         %6.4f\t       %6.4f\t        %6.4f\t           %6.4f\t           %3.4f\t                %3.4\t          %3.4\t          %3.4\t\n'];
   dataIn_TD = {   stimOn,         maskOn,       maskOff,    responseOnset,   responseOffset,   testIfTimeUp,             ITI_secs,       arrayDur,        maskDur} ;                    % mask duration  
   
 
 
 
 % Create header row if this the first trial
-if ~(exist(['../' whoAmIFile '_data/' num2str(subID) whoAmIFile 'trialLvl.txt'])==2)
-    fID = fopen(['../' whoAmIFile '_data/' num2str(subID) whoAmIFile 'trialLvl.txt'], 'a+'); % open file
+if ~(exist(['../' whoAmIFile '_data/' num2str(subID) whoAmIFile 'trialLvl.tsv'])==2)
+    fID = fopen(['../' whoAmIFile '_data/' num2str(subID) whoAmIFile 'trialLvl.tsv'], 'a+'); % open file
     
     % all the variable names are strings; save as such
     varTypes_names = repmat('%s\t ', 1, length(varNames_BA)+length(varNames_SP)+length(varNames_TD));
@@ -101,9 +102,10 @@ end
 
 
 % Open/create a file named after this subject; spec. permission to append
-fID = fopen(['../' whoAmIFile '_data/' num2str(subID) whoAmIFile 'trialLvl.txt'], 'a+');
+fID = fopen(['../' whoAmIFile '_data/' num2str(subID) whoAmIFile 'trialLvl.tsv'], 'a+');
 
 dataIn = {dataIn_BA{:} dataIn_SP{:} dataIn_TD{:}};
 fprintf(fID, [varTypes_BA varTypes_SP varTypes_TD '\n'], dataIn{:}); % save data
+fprintf(fID,'\n');
 fclose(fID); % close the file connection
 
