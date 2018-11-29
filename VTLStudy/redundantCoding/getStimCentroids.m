@@ -1,4 +1,6 @@
-function [stimCentroids,numGridColumns,numGridRows,rectContainer] = getStimCentroids(setSize, centroid, iconWidth)
+function [stimCentroids,numGridXs,numGridYs,rectContainer] = getStimCentroids(setSize, centroid, iconWidth)
+%
+% [stimCentroids,numGridColumns,numGridRows,rectContainer] = getStimCentroids(setSize, centroid, iconWidth)
 %
 %  Author: Jardine & McColeman
 %  Date Created: February 26 2018
@@ -41,28 +43,23 @@ xDist = (1+spacingRule)*iconWidth; yDist = (1+spacingRule)*iconWidth;
 K = 1:setSize;
 factorsPossible = K(rem(setSize,K)==0);
 reshapeFactor = factorsPossible((round(length(factorsPossible)/2))); %median(factorsPossible); median breaks w/ non-squares
-% .. and then initializing a matrix of the same dimensions that will later
-% be filled in with X, Y coordinates
-% following is reundant, but b/c may want non-squares later
-xStimCoords = transpose(reshape(K, reshapeFactor, []));
-    sizeX = size(xStimCoords); numGridColumns = sizeX(2); %1, 2, 3 goes L-->R
-yStimCoords = reshape(K, reshapeFactor, []); % 1, 2, 3 goes top-->down
-    sizeY = size(yStimCoords); numGridRows = sizeY(1);
-    
-temp_rectContainer = [0,0,numGridRows*xDist,numGridColumns*yDist];
+numGridXs = reshapeFactor;
+numGridYs = setSize/numGridXs;
+
+temp_rectContainer = [0,0,numGridXs*xDist,numGridYs*yDist];
 rectContainer = CenterRectOnPoint(temp_rectContainer,centroid(1),centroid(2));
 
 % 2. using centroid, build out array
 % Screen('FillOval') can be sped up with rect as 4 rows by n columns
 % so will output centroids as (x,y) x setSize
 stimCentroids = zeros(2,setSize);
-xVals = linspace(rectContainer(1),rectContainer(3),numGridColumns);
-yVals = linspace(rectContainer(2),rectContainer(4),numGridRows);
+xVals = linspace(rectContainer(1),rectContainer(3),numGridXs);
+yVals = linspace(rectContainer(2),rectContainer(4),numGridYs);
 
 % fill in
-for xi=1:numGridColumns
-    for yi=1:numGridRows
-        xyi = sub2ind([numGridRows,numGridColumns],xi,yi);
+for xi=1:numGridXs
+    for yi=1:numGridYs
+        xyi = sub2ind([numGridXs,numGridYs],xi,yi);
         stimCentroids(1,xyi) = xVals(xi);
         stimCentroids(2,xyi) = yVals(yi);
     end
