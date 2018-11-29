@@ -1,11 +1,11 @@
 %  This is a wrapper function to contain all of the code and functions 
 %  relevant for making a response on the response bar. 
 %
-function [responseTime, responsePixels, responseRatio] = responsePhase(kbPtr, windowPtr, screenXMax, screenYMax)
+function [responseTime, responsePixels, responseRatio] = responsePhase(kbPtr, windowPtr, screenXMax, screenYMax, baseEncoding, label1Properties, label2Properties)
 %
 %  Author: Caitlyn McColeman
 %  Date Created: November 19 2018
-%  Last Edit:    November 26 2018
+%  Last Edit:    November 29 2018
 %
 %  Visual Thinking Lab, Northwestern University
 %  Originally Created For: redundantCoding.m
@@ -14,6 +14,15 @@ function [responseTime, responsePixels, responseRatio] = responsePhase(kbPtr, wi
 %  Verified: []
 %
 %  INPUT:    
+%               kbPtr, Int: the index marker for the keyboard
+%           windowPtr; Int: the index maker for the psychtoolbox window we're
+%                           drawing to
+%          screenXMax; Int: the size of the screen horizontally in pixels
+%          screenYMax; Int: the size of the screen vertically in pixels
+%   label1Properties; Cell: the information required to draw the first
+%                           label
+%   label2Properties; Cell: the information required to draw the second
+%                           label
 %         
 %  OUTPUT: 
 %
@@ -38,13 +47,17 @@ switch lower(scaleType)
         minX = .25 * screenXMax;
         maxX = .75 * screenXMax;
         
-        minY = .66 * screenYMax;
+        minY = .7 * screenYMax;
         maxY = .75 * screenYMax;
+        
+        labCenterY = minY - .02*screenXMax; % same for both labels; slightly above bar
+        
         
         snapVec = [minY maxY]; % participants won't draw vertically, so we'll do it for them    
 
         previousRect = [minX minY minX+1 minY+1];  %initialize to something silly, this will store the participants' latest response so they can see it while they adjust the bar
 
+        
 end
 
 weHaveSomethingToDraw = 0; %initially, but as the user adjusts the scale we'll have their last response to draw in
@@ -55,6 +68,23 @@ mouseSampler = 0;
 
 
 while sum(keycode)==0   % present response scale, and wait for the user to press enter to advance.
+       
+    % prepare label markers
+    if strcmpi(label1Properties{1}, 'dot')
+        % draw a dot around the label center position (lab1CenterY, labCenterY)
+        Screen('FillOval', windowPtr, label1Properties{2}, [minX-.5*label1Properties{3}, labCenterY-.5*label1Properties{3}, minX+.5*label1Properties{3}, labCenterY+.5*label1Properties{3}]);
+       % Screen('FillOval', windowPtr, label1Properties{2}, [100 500 200 600]);
+        % draw a triangle around the label center position (lab1CenterY, labCenterY)
+        DrawTriangle(windowPtr, maxX, labCenterY,0,label1Properties{3},label1Properties{3},label1Properties{2});
+    elseif strcmpi(label2Properties{1}, 'dot')
+        % dot, as above
+        Screen('FillOval', windowPtr, label2Properties{2}, [maxX-.5*label2Properties{3}, labCenterY-.5*label2Properties{3}, maxX+.5*label2Properties{3}, labCenterY+.5*label2Properties{3}]);
+        % triangle, as above
+        DrawTriangle(windowPtr, maxX, labCenterY,0,label2Properties{3},label2Properties{3},label2Properties{2});
+    elseif strcmpi(label1Properties{1}, 'square') % shape is not a meaningful variable. Use square to represent color. 
+        Screen(windowPtr,'FillRect', label1Properties{2}, [minX-.5*label1Properties{3}, labCenterY-.5*label1Properties{3}, minX+.5*label1Properties{3}, labCenterY+.5*label1Properties{3}])
+        Screen(windowPtr,'FillRect', label2Properties{2}, [maxX-.5*label2Properties{3}, labCenterY-.5*label2Properties{3}, maxX+.5*label2Properties{3}, labCenterY+.5*label2Properties{3}])
+    end
     
     % listen to keyboard
     [touch, secs, keycode, timingChk] = KbCheck(kbPtr);
@@ -69,10 +99,10 @@ while sum(keycode)==0   % present response scale, and wait for the user to press
     % determine if participants are hovering/clicking over the response window
     inAdjustmentRegion = y>minY-30 && y<maxY+30; % an extra 30 pixels added as a usability buffer
             buttonDown = sum(buttons)>0;         % is the mouse clicked?
-    
+            
     [hasBeenAdjusted, updatedRect] = responseScale(scaleType, inAdjustmentRegion, weHaveSomethingToDraw, buttonDown, previousRect, x, y, windowPtr, responseBarCol, snapVec);
     
-                      previousRect = updatedRect; % replace the previously stored rectangle with most recent reponse
+                     previousRect = updatedRect; % replace the previously stored rectangle with most recent reponse
     % note whether there's a response so we make sure to draw in the on the
     % next iteration
     weHaveSomethingToDraw = hasBeenAdjusted;
@@ -84,7 +114,7 @@ while sum(keycode)==0   % present response scale, and wait for the user to press
         
         %adjustOnset(mouseSampler) = Screen('Flip', windowPtr);
         % Horizontally and vertically centered:
-        [nx, ny, bbox] = DrawFormattedText(windowPtr, instructionTxt, 'center', 'center', 0);
+        DrawFormattedText(windowPtr, instructionTxt, 'center', 'center', 0);
         
         % record the value of the drawn rectangle this millisecond
         responseAdjustmentRec = [responseAdjustmentRec updatedRect];
