@@ -26,7 +26,7 @@
 %
 %  Additional Comments:
 %  The file will change the directory to its source folder to keep saving consistent and avoid file errors.
-%  Because different machines PsychToolBox stored in different places, that directly will be need to manually coded in prep for data collection.
+%  Because different machines PsychToolBox stored in different places, that directory will be need to manually coded in prep for data collection.
 %
 %  During development, comments marked [to do.. are action items
 %
@@ -55,14 +55,13 @@
 %  -
 %  -
 %
-%clear all; % prefer only clearvars, so that PTB is a little faster
+
 close all;
 clearvars;
 
 debugMode = 1; % toggle to 1 for development
 
 viewingDistance = 50; %cm, distance from eye to screen (approx)
-
 
 %% 1) Initialize, assign condition/block info, stimulus info
 
@@ -79,26 +78,26 @@ proportionMat = [[30, 70];                % proportion of filled-in icons
     [52, 48];
     [48, 52];                % [todo] make this an external script to streamline
     [10, 90]];                % [todo] find a proportion value near 50 that works for different set sizes
-% sizeOfProportionLevels = size(proportionMat);  % how many proportion levels are there?
+
+% prepare indexing and reference variables to proportionMat
 sizeProportionMat = size(proportionMat);    
-proportionIdx = 1:sizeProportionMat(1);   % prep an indexing vector
+    proportionIdx = 1:sizeProportionMat(1);   % prep an indexing vector
 nProportionLevels = length(proportionIdx);
 
 % levels of the Redundancy factor
-baseEncodingVect = {'shape','color'};     % whether shape or color is used as the redundandy=0 encoding
+baseEncodingVect = {'shape','color'};      % whether shape or color is used as the redundandy=0 encoding
 nBaseEncodingLevels = length(baseEncodingVect);
 
-redundancyVect = [1;0];                   % are group differences redundantly encoded?
+redundancyVect = [1;0];                    % are group differences redundantly encoded?
 nRedundancyLevels = length(redundancyVect);% if base=shape, uses dots and triangles. redundancy adds color.
 
 
 % full crossing of redundancy x proportion
-% [propGrid,redundantGrid] = meshgrid(proportionIdx,redundancyVect,nRedundancyLevels); % note: can use combvec at scale with >2 vectors
-% tempReshape=cat(2,propGrid',redundantGrid');
-% conditionCrossing=reshape(tempReshape,[],2);               % use index in first column to pull proportion from proportionMat
 nConds = nProportionLevels * nBaseEncodingLevels * nRedundancyLevels;                                        
 
 randomizeOrder = 1;
+
+% for development, set to one; for data collection set to 0
 if debugMode == 1
     randomizeOrder = 0;
 end
@@ -107,6 +106,8 @@ end
 % block/trial content
 trialRepsPerBlock = 1; % how many reps per condition
 nBlocks = 2;
+testIfTimeUp = 0;
+
 % blockContent = repmat((1:nConds),1,trialRepsPerBlock);
 nTrials = trialRepsPerBlock*nConds; %length(blockContent);
 
@@ -118,15 +119,11 @@ setSize = 100; % nIcons
 % Timing, in secs
 ITI_secs = 1.00;
 arrayDur = 0.300;
-maskDur = 1.00;
+ maskDur = 1.00;
 
 
 %% 2) Participant-level information; prep PsychToolBox presentation info
 experimentOpenTime = tic;
-
-if debugMode
-    subID = 9999;  % the debug subject ID will overwrite input to avoid errors
-end
 
 % Basic experiment parameters
 nMinutes = 50; % maximum duration
@@ -137,8 +134,8 @@ trialPerBlock = 50;
 PsychDefaultSetup(2);
 
 % keyboard, mouse information
-[keyboardIndices, productNames, allInfos] = GetKeyboardIndices;  
-[mouseIndices, productNames, allInfo] = GetMouseIndices;
+[keyboardIndices, productNamesKB, allInfos] = GetKeyboardIndices;  
+[mouseIndices, productNamesMouse, allInfo] = GetMouseIndices;
        
 kbPointer = keyboardIndices(end);  
 mousePntr = mouseIndices(end);
@@ -167,11 +164,13 @@ testIfTimeUp = 0;
 [width_Win, height_Win]=Screen('WindowSize', windowPtr); % display size in pix
 width_Dis=Screen('DisplaySize', screenNumber); % display size in mm
 Screen('Close');
+
 %calcualte deg to pix conversion coefficient
 deg2pixCoeff=1/(atan(width_Dis/(width_Win*(viewingDistance*10)))*180/pi);
 
-[windowPtr, windowRect] = PsychImaging('OpenWindow', screenNumber, lightGrey); %CMC rect [1 1 1200 750]
+%[windowPtr, windowRect] = PsychImaging('OpenWindow', screenNumber, lightGrey); %CMC rect [1 1 1200 750]
 Screen('Resolution', windowPtr);
+
 % Get the size of the on screen window
 [screenXpixels, screenYpixels] = Screen('WindowSize', windowPtr);
 
@@ -194,7 +193,8 @@ sameOrDiffTrial = 'adjust';
 
 % allow only task-relevant responses [TODO] probably just want "enter" when
 % they're done
-ret = RestrictKeysForKbCheck([32 44 40 37 77 88]); % spacebar, return and enter for OSx and PC. only tested on mac
+% lol we need spacebar. revisit which keys should be excluded
+% ret = RestrictKeysForKbCheck([32 44 40 37 77 88]); % spacebar, return and enter for OSx and PC. only tested on mac
 
 
 %% new stimulus sizing
@@ -221,6 +221,11 @@ mkdir(timeIDDir)                  % create folder
 addpath(timeIDDir)                % add that new folder to the path
 
 
+if debugMode
+    subID = 'debug';  % the debug subject ID will overwrite input to avoid errors
+else
+    subID = timeIDDir; % each participant gets their own folder with all of their data
+end
 
 try % the whole experiment is in a try/catch
     
@@ -232,7 +237,7 @@ try % the whole experiment is in a try/catch
         for trial = 1:nTrials
             
             % what proportions and redundancies are we showing
-            propCond = propConds(trial);
+            propCond = propConds(trial); 
                 percentProp1 = proportionMat(propCond,1);
                 percentProp2 = proportionMat(propCond,2);
                 nProp1 = ceil(percentProp1*setSize/100);
@@ -241,20 +246,25 @@ try % the whole experiment is in a try/catch
             
             % base encoding is in shape or color?
             baseEncoding = baseEncodingVect{encodingConds(trial)};
+            
             % coinflip to determine base col and "fill" col
             if rand < 0.5
                 prop1Shape = 'dot'; prop2Shape = 'tri';
             else
                 prop1Shape = 'tri'; prop2Shape = 'dot';
             end
+            
             shapeOrder = [prop1Shape,prop2Shape];
+            
             % coinflip to determine base col and "fill" col
             if rand < 0.5
                 prop1Col = [white white white]; prop2Col = [black black black];
             else
                 prop1Col = [black black black]; prop2Col = [white white white];
             end
+            
             colorOrder = [prop1Col; prop2Col];
+            
             % replace stuff
             switch baseEncoding
                 case 'shape'
@@ -266,6 +276,7 @@ try % the whole experiment is in a try/catch
                         shapeOrder = [prop1Shape,prop1Shape]; % if just seeing colors, all the same shape.
                     end
             end
+            
             %set up color matrices
             nCol1 = repmat(prop1Col',1,nProp1); 
             nCol2 = repmat(prop2Col',1,nProp2);
@@ -297,11 +308,13 @@ try % the whole experiment is in a try/catch
 
             % locations are top left = 1, top center = 2, top right = 3 ... [todo coerce order in positionRef]
             presentationLocation = randi([1,6],1); % display is in one of six locations
+            %{
             if presentationLocation <= 3          % eliminate common vertical baseline
                 responseLocation = randi([4,6],1);
             else
                 responseLocation = randi([1,3],1);
             end
+            %}
             positionOptions = positionRef([screenXpixels, screenYpixels]); % index into the posiiton options
             
             % get pixel information for the centre of the stimulus array.
@@ -352,24 +365,82 @@ try % the whole experiment is in a try/catch
             maskOff = Screen('Flip', windowPtr,maskOn+maskDur);  
             
 
-            %% 5) response
+            %% 5) collect response
             
-            % [todo] create a function to have a participants make their response
-            % on a bar
-            
-            %% 6) collect response
-            responseOnset = Screen('Flip', windowPtr);
-            % [todo] log response value, response location, response time
-            if debugMode==0
-                [responseTime, responsePixels, responseRatio] = responsePhase(kbPointer, windowPtr, screenXpixels, screenYpixels);
-                % clear screen, collect timing
-                Screen('FillRect', windowPtr, backgroundColor);
-                responseOffset = Screen('Flip', windowPtr);
+            % prepare data information so that the extremes of the
+            % response bar can be labelled with symbols
+            if strcmpi(baseEncoding, 'shape') || redundancyCond == 1
+                label1Properties = {prop1Shape, prop1Col, dotRadius};
+                label2Properties = {prop2Shape, prop2Col, dotRadius};
+            else % don't use a shape lest that's in the array lest it conflates things in this within-subjects design
+                label1Properties = {'square', prop1Col, dotRadius};
+                label2Properties = {'square', prop2Col, dotRadius};
             end
             
-            %% 7) feedback?
+            responseOnset = Screen('Flip', windowPtr);
+            
+            % gather response variables
+            [responseTime, responsePixels, responseRatio] = responsePhase(kbPointer, windowPtr, screenXpixels, screenYpixels, baseEncoding, label1Properties, label2Properties);
+           
+            display(responseTime)
+            
+            % calculate response logging values
+            trialAccuracy = responseRatio-percentProp1/100;
+            
+            % clear screen, collect timing
+            Screen('FillRect', windowPtr, backgroundColor);
+            responseOffset = Screen('Flip', windowPtr);
+           
+            % temporal threshold
+            testIfTimeUp=toc(experimentOpenTime);
+            testIfTimeUp < nMinutes; % [todo] make sure Jardine's cool with it, but if they get to 50 mins skip to the last trial so we don't go over time.
+            
+            remainingTime = round(nMinutes - testIfTimeUp/60);
+            
+            %% 6) write data to file
+            % save the .mat file naively: all variables redundantly saved
+            % within this subjects' folder
+            save(['../' whoAmIFile '_data/' whoAmIFile 'sub' num2str(subID) 'trial' num2str(trial) '.mat'])
+                        
+            % save a curated .csv file: all variables organized so each
+            % participant one file we can use for our primary analyses
+            saveTrialDataRC(...
+                ... %======================== basic analysis variables [BA] 
+                subID, ...                     participantID
+                trial, ...                     trialID    
+                trialAccuracy, ...             accuracy
+                proportionMat(propCond,:), ... the full proportion
+                baseEncoding, ...              comparisonTask
+                redundancyCond, ...            if the groups are redundantly encoded
+                responseTime, ...              response time
+                setSize, ...                   setSize
+                percentProp1, ...              correctRatio
+                responseRatio, ...             participant's response
+                responsePixels, ...         %  participant's response (raw, in pixel form)
+                ... %======================== stimulus properties variables [SP]
+                prop1Col, ...                  color of first group
+                prop2Col, ...                  color of second group
+                prop1Shape,...                 shape of first group
+                prop2Shape,...                 shape of second group
+                shapeOrder,...                 string representing order of presentation
+                iconWidth, ...                 how many pixels in diameter is a dot
+                iconWidth_dva, ...             how many degrees of visual angle in diameter is a dot (allows us to calculate visual angle for other elements in pixels too) 
+                presentationLocation, ...   %  on which part of the screen was the array presented?
+                ... %======================== stimulus timing details [TD]
+                stimOn, ...                    stimulus onset
+                maskOn, ...                    mask onset
+                maskOff, ...                   mask offset
+                responseOnset, ...             response phase onset
+                responseOffset, ...            response phase offset
+                testIfTimeUp, ...              time elapsed in minutes
+                ITI_secs, ...                  intertrial interval seconds
+                arrayDur, ...                  stimulus presentation duration
+                maskDur)                     % mask duration
+            
   
         end %trial
+        
+        
         
     end %block
     
