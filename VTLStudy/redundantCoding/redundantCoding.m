@@ -160,7 +160,11 @@ backgroundColor = medGrey;
 testIfTimeUp = 0;
 
 % Open an on screen window
-[windowPtr, screenRect] = Screen('OpenWindow', screenNumber, 0, [], 32, 2);
+%[windowPtr, screenRect] = Screen('OpenWindow', screenNumber, 0, [], 32, 2);
+
+[windowPtr, windowRect] = PsychImaging('OpenWindow', screenNumber, lightGrey); %CMC rect [1 1 1200 750]
+Screen('Resolution', windowPtr);
+
 [width_Win, height_Win]=Screen('WindowSize', windowPtr); % display size in pix
 width_Dis=Screen('DisplaySize', screenNumber); % display size in mm
 Screen('Close');
@@ -168,10 +172,8 @@ Screen('Close');
 %calcualte deg to pix conversion coefficient
 deg2pixCoeff=1/(atan(width_Dis/(width_Win*(viewingDistance*10)))*180/pi);
 
-%[windowPtr, windowRect] = PsychImaging('OpenWindow', screenNumber, lightGrey); %CMC rect [1 1 1200 750]
-Screen('Resolution', windowPtr);
 
-% Get the size of the on screen window
+% Get the size of the on screen window [todo clean this up; it's the same as jardine's above]
 [screenXpixels, screenYpixels] = Screen('WindowSize', windowPtr);
 
 % get some details about the presentation size
@@ -205,6 +207,7 @@ dotRadius = dotRadius_dva*deg2pixCoeff;
 %% directory prep
 % make sure we're in the right place in the directory so that stuff saves
 % to the proper location
+whoAmIFile = mfilename;
 whereAmI  = mfilename('fullpath') ;
 toLastDir = regexp(whereAmI, '.*\/', 'match') ;% get directory only (exclude file name)
 toLastDir = toLastDir{1}; % extract string from cell
@@ -228,7 +231,6 @@ else
 end
 
 try % the whole experiment is in a try/catch
-    
     for block = 1:nBlocks
 
         % generate block's list of factor levels for each trial
@@ -292,29 +294,37 @@ try % the whole experiment is in a try/catch
                     dotIndices = 1:nProp1; triIndices = nProp1+1:setSize;
                     nDots = length(dotIndices);
                     nTris = length(triIndices);
+                    
+                    % for response
+                    label1Properties = {'dot', prop1Col, dotRadius, 'left'};
+                    label2Properties = {'tri', prop2Col, dotRadius, 'right'};
                 case 'tridot'
                     triIndices = 1:nProp1; dotIndices = nProp1+1:setSize;
                     nDots = length(dotIndices);
                     nTris = length(triIndices);
+                    
+                    % for response
+                    label1Properties = {'tri', prop1Col, dotRadius, 'left'};
+                    label2Properties = {'dot', prop2Col, dotRadius, 'right'};
                 case 'dotdot'
                     dotIndices = 1:setSize; triIndices = 0;
                     nDots = length(dotIndices);
                     nTris = 0;
+                    
+                    label1Properties = {'dot', prop1Col, dotRadius, 'left'};
+                    label2Properties = {'dot', prop2Col, dotRadius, 'right'};
                 case 'tritri'
                     triIndices = 1:setSize; dotIndices = 0;
                     nDots = 0;
                     nTris = length(triIndices);
+                    
+                    label1Properties = {'tri', prop1Col, dotRadius, 'left'};
+                    label2Properties = {'tri', prop2Col, dotRadius, 'right'};
             end
 
             % locations are top left = 1, top center = 2, top right = 3 ... [todo coerce order in positionRef]
             presentationLocation = randi([1,6],1); % display is in one of six locations
-            %{
-            if presentationLocation <= 3          % eliminate common vertical baseline
-                responseLocation = randi([4,6],1);
-            else
-                responseLocation = randi([1,3],1);
-            end
-            %}
+            
             positionOptions = positionRef([screenXpixels, screenYpixels]); % index into the posiiton options
             
             % get pixel information for the centre of the stimulus array.
@@ -370,11 +380,11 @@ try % the whole experiment is in a try/catch
             % prepare data information so that the extremes of the
             % response bar can be labelled with symbols
             if strcmpi(baseEncoding, 'shape') || redundancyCond == 1
-                label1Properties = {prop1Shape, prop1Col, dotRadius};
-                label2Properties = {prop2Shape, prop2Col, dotRadius};
+                %label1Properties = {prop1Shape, prop1Col, dotRadius};
+                %label2Properties = {prop2Shape, prop2Col, dotRadius};
             else % don't use a shape lest that's in the array lest it conflates things in this within-subjects design
-                label1Properties = {'square', prop1Col, dotRadius};
-                label2Properties = {'square', prop2Col, dotRadius};
+                %label1Properties = {'square', prop1Col, dotRadius};
+                %label2Properties = {'square', prop2Col, dotRadius};
             end
             
             responseOnset = Screen('Flip', windowPtr);
@@ -404,9 +414,7 @@ try % the whole experiment is in a try/catch
                         
             % save a curated .csv file: all variables organized so each
             % participant one file we can use for our primary analyses
-            saveTrialDataRC(...
-                ... %======================== basic analysis variables [BA] 
-                subID, ...                     participantID
+            saveTrialDataRC(subID, ...  %======================== basic analysis variables [BA]                    participantID
                 trial, ...                     trialID    
                 trialAccuracy, ...             accuracy
                 proportionMat(propCond,:), ... the full proportion
@@ -416,9 +424,8 @@ try % the whole experiment is in a try/catch
                 setSize, ...                   setSize
                 percentProp1, ...              correctRatio
                 responseRatio, ...             participant's response
-                responsePixels, ...         %  participant's response (raw, in pixel form)
-                ... %======================== stimulus properties variables [SP]
-                prop1Col, ...                  color of first group
+                responsePixels, ...         %  participant's response (raw, in pixel form)                
+                prop1Col, ... %======================== stimulus properties variables [SP]                 color of first group
                 prop2Col, ...                  color of second group
                 prop1Shape,...                 shape of first group
                 prop2Shape,...                 shape of second group
@@ -426,8 +433,7 @@ try % the whole experiment is in a try/catch
                 iconWidth, ...                 how many pixels in diameter is a dot
                 iconWidth_dva, ...             how many degrees of visual angle in diameter is a dot (allows us to calculate visual angle for other elements in pixels too) 
                 presentationLocation, ...   %  on which part of the screen was the array presented?
-                ... %======================== stimulus timing details [TD]
-                stimOn, ...                    stimulus onset
+                stimOn, ...   %======================== stimulus timing details [TD]   stimulus onset
                 maskOn, ...                    mask onset
                 maskOff, ...                   mask offset
                 responseOnset, ...             response phase onset
@@ -435,7 +441,8 @@ try % the whole experiment is in a try/catch
                 testIfTimeUp, ...              time elapsed in minutes
                 ITI_secs, ...                  intertrial interval seconds
                 arrayDur, ...                  stimulus presentation duration
-                maskDur)                     % mask duration
+                maskDur, ...                %  mask duration
+                whoAmIFile)                 %  folder name    
             
   
         end %trial
