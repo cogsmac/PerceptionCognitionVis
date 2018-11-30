@@ -1,7 +1,7 @@
 %  Allows a user in an adjustment task to change the value of a stimulus. A
 %  generalizable version of mouseAdjustment.m
 %
-function [hasBeenAdjusted, updatedRect]= responseScale(scaleType, inAdjustmentRegion, weHaveSomethingToDraw, buttonDown, previousRect, x, y, windowPtr, responseBarCol, snapVec)
+function [hasBeenAdjusted, updatedRect]= responseScale(kbPointer, windowPtr, width_Win, height_Win, baseEncoding, weHaveSomethingToDraw, snapVec,responseBarCol, inAdjustmentRegion, previousRect, buttonDown, x, y)
 %
 %  Author: Caitlyn McColeman
 %  Date Created: Nov 26 2018
@@ -20,6 +20,9 @@ function [hasBeenAdjusted, updatedRect]= responseScale(scaleType, inAdjustmentRe
 %  Additional Scripts Used:
 %
 %  Additional Comments:
+
+% hard code to rectangle slider;can be extended. 
+scaleType = 'rectangleSlider'
 
 % if nothing else changes, the status remains as is
 hasBeenAdjusted = weHaveSomethingToDraw; % will update if there's a viable click

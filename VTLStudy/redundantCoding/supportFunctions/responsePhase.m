@@ -1,8 +1,8 @@
 %  This is a wrapper function to contain all of the code and functions 
 %  relevant for making a response on the response bar. 
 %
-function [responseTime, responsePixels, responseRatio] = responsePhase(kbPtr, windowPtr, screenXMax, screenYMax, baseEncoding, label1Properties, label2Properties)
-%
+function [responseTime, responsePixels, responseRatio] = responsePhase(kbPtr, windowPtr, prop1Shape, prop2Shape, screenXPixels, screenYPixels, iconWidth, prop1Col, prop2Col, baseEncoding)
+%                           
 %  Author: Caitlyn McColeman
 %  Date Created: November 19 2018
 %  Last Edit:    November 29 2018
@@ -32,7 +32,7 @@ function [responseTime, responsePixels, responseRatio] = responsePhase(kbPtr, wi
 
 % some hard-coded constants we can adjust on additional iterations
      scaleType = 'rectangleSlider'; %'rectangleAcross'; % starting with this for now; we can change to be a variable if we want to play with other response options.
-responseBarCol = [0,0,0];           % what color is the participant using to draw?
+responseBarCol = [78/255, 42/255, 132/255];             % what color is the participant using to draw?
 
 
 %  Initialize constants
@@ -44,13 +44,13 @@ commandwindow;          % coerce cursor to command window for easy exit and to k
 % set-up properties of the response scale outline 
 switch lower(scaleType)
     case {'rectangleacross', 'rectangleslider'} %[todo make a choice whether to use color here too if it's meaningful during stimulus phase]
-        minX = .25 * screenXMax;
-        maxX = .75 * screenXMax;
+        minX = .25 * screenXPixels;
+        maxX = .75 * screenXPixels;
         
-        minY = .7 * screenYMax;
-        maxY = .75 * screenYMax;
+        minY = .7 * screenYPixels;
+        maxY = .75 * screenYPixels;
         
-        labCenterY = minY - .02*screenXMax; % same for both labels; slightly above bar
+        labCenterY = minY - .02*screenYPixels; % same for both labels; slightly above bar
         
         
         snapVec = [minY maxY]; % participants won't draw vertically, so we'll do it for them    
@@ -64,28 +64,49 @@ weHaveSomethingToDraw = 0; %initially, but as the user adjusts the scale we'll h
 responseAdjustmentRec = [];%in case we'd like to see how people adjust the response bar over time, we can access it from a .mat file saved herein
 keycode = 0;               %no button press to start, but listen until there is via while loop
 mouseSampler = 0;
+               
+ leftPos = [.25 * screenXPixels, .68*screenYPixels];
+rightPos = [.75 * screenXPixels, .68*screenYPixels];
 
 
+dotRadius = iconWidth/2
 
 while sum(keycode)==0   % present response scale, and wait for the user to press enter to advance.
-       
+    
+    
+    switch prop1Shape
+        case 'dot'
+            Screen('FillOval', windowPtr, prop1Col, [leftPos(1)-iconWidth,leftPos(2)-dotRadius,leftPos(1)+dotRadius,leftPos(2)+dotRadius]);
+        case 'tri'
+            DrawTriangle(windowPtr, leftPos(1), leftPos(2),0,iconWidth,iconWidth,prop1Col);
+    end
+    switch prop2Shape
+        case 'dot'
+            Screen('FillOval', windowPtr, prop2Col, [rightPos(1)-dotRadius,rightPos(2)-dotRadius,rightPos(1)+dotRadius,rightPos(2)+dotRadius]);
+        case 'tri'
+            DrawTriangle(windowPtr, rightPos(1), rightPos(2),0,iconWidth,iconWidth,prop2Col);
+    end
+    
+    %{
     % prepare label markers
-    if strcmpi(label1Properties{1}, 'dot')
+    if strcmpi(label1Properties{1}, 'dot') && strcmpi(label1Properties{4}, 'left')
         % draw a dot around the label center position (lab1CenterY, labCenterY)
         Screen('FillOval', windowPtr, label1Properties{2}, [minX-.5*label1Properties{3}, labCenterY-.5*label1Properties{3}, minX+.5*label1Properties{3}, labCenterY+.5*label1Properties{3}]);
-       % Screen('FillOval', windowPtr, label1Properties{2}, [100 500 200 600]);
         % draw a triangle around the label center position (lab1CenterY, labCenterY)
         DrawTriangle(windowPtr, maxX, labCenterY,0,label1Properties{3},label1Properties{3},label1Properties{2});
-    elseif strcmpi(label2Properties{1}, 'dot')
+    elseif strcmpi(label2Properties{1}, 'dot') && strcmpi(label1Properties{4}, 'left')
         % dot, as above
         Screen('FillOval', windowPtr, label2Properties{2}, [maxX-.5*label2Properties{3}, labCenterY-.5*label2Properties{3}, maxX+.5*label2Properties{3}, labCenterY+.5*label2Properties{3}]);
         % triangle, as above
         DrawTriangle(windowPtr, maxX, labCenterY,0,label2Properties{3},label2Properties{3},label2Properties{2});
-    elseif strcmpi(label1Properties{1}, 'square') % shape is not a meaningful variable. Use square to represent color. 
+    elseif strcmpi(label1Properties{1}, 'square') && strcmpi(label1Properties{4}, 'left') % shape is not a meaningful variable. Use square to represent color. 
         Screen(windowPtr,'FillRect', label1Properties{2}, [minX-.5*label1Properties{3}, labCenterY-.5*label1Properties{3}, minX+.5*label1Properties{3}, labCenterY+.5*label1Properties{3}])
         Screen(windowPtr,'FillRect', label2Properties{2}, [maxX-.5*label2Properties{3}, labCenterY-.5*label2Properties{3}, maxX+.5*label2Properties{3}, labCenterY+.5*label2Properties{3}])
+    else
+        sca
+        display("caitlyn, you idiot.")
     end
-    
+    %}
     % listen to keyboard
     [touch, secs, keycode, timingChk] = KbCheck(kbPtr);
     keyIn = KbName(keycode);
@@ -94,13 +115,13 @@ while sum(keycode)==0   % present response scale, and wait for the user to press
     [x,y,buttons,focus,valuators,valinfo] = GetMouse();
    
     % draw the outline of the response scale 
-    Screen('FrameRect',windowPtr, [0 0 0],[minX, minY, maxX, maxY])
+    Screen('FrameRect', windowPtr, responseBarCol, [minX, minY, maxX, maxY])
     
     % determine if participants are hovering/clicking over the response window
     inAdjustmentRegion = y>minY-30 && y<maxY+30; % an extra 30 pixels added as a usability buffer
             buttonDown = sum(buttons)>0;         % is the mouse clicked?
             
-    [hasBeenAdjusted, updatedRect] = responseScale(scaleType, inAdjustmentRegion, weHaveSomethingToDraw, buttonDown, previousRect, x, y, windowPtr, responseBarCol, snapVec);
+    [hasBeenAdjusted, updatedRect] = responseScale(kbPtr, windowPtr, screenXPixels, screenYPixels, baseEncoding, weHaveSomethingToDraw, snapVec,responseBarCol, inAdjustmentRegion, previousRect, buttonDown, x, y);
     
                      previousRect = updatedRect; % replace the previously stored rectangle with most recent reponse
     % note whether there's a response so we make sure to draw in the on the
