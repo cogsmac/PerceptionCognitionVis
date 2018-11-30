@@ -163,18 +163,21 @@ testIfTimeUp = 0;
 %[windowPtr, screenRect] = Screen('OpenWindow', screenNumber, 0, [], 32, 2);
 
 [windowPtr, windowRect] = PsychImaging('OpenWindow', screenNumber, lightGrey); %CMC rect [1 1 1200 750]
-Screen('Resolution', windowPtr);
 
 [width_Win, height_Win]=Screen('WindowSize', windowPtr); % display size in pix
+
+
+%Screen('Resolution', windowPtr);
+% Get the size of the on screen window [todo clean this up; it's the same as jardine's above]
+[screenXpixels, screenYpixels] = Screen('WindowSize', windowPtr);
 width_Dis=Screen('DisplaySize', screenNumber); % display size in mm
-Screen('Close');
+
+
+%width_Dis = width_Win;
+%Screen('Close');
 
 %calcualte deg to pix conversion coefficient
 deg2pixCoeff=1/(atan(width_Dis/(width_Win*(viewingDistance*10)))*180/pi);
-
-
-% Get the size of the on screen window [todo clean this up; it's the same as jardine's above]
-[screenXpixels, screenYpixels] = Screen('WindowSize', windowPtr);
 
 % get some details about the presentation size
 positionOptions = positionRef([screenXpixels, screenYpixels]);
@@ -377,20 +380,10 @@ try % the whole experiment is in a try/catch
 
             %% 5) collect response
             
-            % prepare data information so that the extremes of the
-            % response bar can be labelled with symbols
-            if strcmpi(baseEncoding, 'shape') || redundancyCond == 1
-                %label1Properties = {prop1Shape, prop1Col, dotRadius};
-                %label2Properties = {prop2Shape, prop2Col, dotRadius};
-            else % don't use a shape lest that's in the array lest it conflates things in this within-subjects design
-                %label1Properties = {'square', prop1Col, dotRadius};
-                %label2Properties = {'square', prop2Col, dotRadius};
-            end
-            
             responseOnset = Screen('Flip', windowPtr);
             
             % gather response variables
-            [responseTime, responsePixels, responseRatio] = responsePhase(kbPointer, windowPtr, screenXpixels, screenYpixels, baseEncoding, label1Properties, label2Properties);
+            [responseTime, responsePixels, responseRatio] = responsePhase(kbPointer, windowPtr, prop1Shape, prop2Shape, width_Win, height_Win, iconWidth, prop1Col, prop2Col, baseEncoding);
            
             display(responseTime)
             
@@ -443,14 +436,28 @@ try % the whole experiment is in a try/catch
                 arrayDur, ...                  stimulus presentation duration
                 maskDur, ...                %  mask duration
                 whoAmIFile)                 %  folder name    
+            keycode = 0
+            % block break
+            if mod(trial, 2) == 0
+                Screen('FillRect', windowPtr, backgroundColor);
+                
+                WaitSecs(ITI_secs)
+                
+                while sum(keycode)==0
+                    
+                    [touch, secs, keycode, timingChk] = KbCheck(kbPointer);
+                    
+                    DrawFormattedText(windowPtr, 'Great work! Take a break. Press enter when you are ready.', 'center', 'center', 0);
+                    
+                    breakUp = Screen('Flip', windowPtr);
+                    
+                end
+                
+            end% block break
             
-  
         end %trial
         
-        
-        
     end %block
-    
     
     sca;
     ShowCursor()
